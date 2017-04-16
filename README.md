@@ -1,7 +1,6 @@
 # united
 
-Slack channel overbooked? Make room for higher paying customers with this
-Slack app.
+Slack channel overbooked? Make room for higher paying customers and crew in Slack.
 
 *© 2017 Jonathan Ballands*
 
