@@ -31,20 +31,18 @@ exports.handler = (event, context, callback) => {
 
     // U stay in the seato, u get a beato
     getAccessToken()
-        .then(token => {
-            return getChannelMembers(decrypted, channelId);
-        })
+        .then(token => getChannelMembers(decrypted, channelId))
         .then(members => chooseRandomMember(members))
-        .then(() => {
-            callback(null, {
+        .then(
+            () => callback(null, {
                 response_type: 'in_channel',
                 text: catchphrase
-            });
-        })
+            })
+        )
         .then(memberId => kickMember(decrypted, channelId, memberId))
         .catch(err => {
             console.error(err);
-            callback(null, err);
+            return callback(null, err);
         });
 };
 
@@ -53,7 +51,7 @@ exports.handler = (event, context, callback) => {
 // -----------------------------------------------------------------------------
 
 //
-//  Returns a promise that will either resolve the app secret or throw an error.
+//  Returns a promise that attempts to resolve the access token from AWS.
 //
 function getAccessToken() {
     return new Promise((resolve, reject) => {
@@ -75,7 +73,7 @@ function getAccessToken() {
 }
 
 //
-//  Returns a promise that will either resolve to members or a channel or throw up.
+//  Returns a promise that attempts to resolve members of a channel.
 //
 function getChannelMembers(accessToken, channelId) {
     return new Promise((resolve, reject) => {
@@ -103,7 +101,7 @@ function getChannelMembers(accessToken, channelId) {
 }
 
 //
-//  Returns a promise that will either return a memberId to kick or throw up everywhere.
+//  Returns a promise that attempts to resolve to the victim user.
 //
 function chooseRandomMember(members) {
     return new Promise((resolve, reject) => {
@@ -118,7 +116,8 @@ function chooseRandomMember(members) {
 }
 
 //
-//  Returns a promise that will either kick a member or throw up.
+//  Returns a promise that attempts to resolve after kicking the victim from the
+//  Slack channel.
 //
 function kickMember(accessToken, channelId, userId) {
     return new Promise((resolve, reject) => {
