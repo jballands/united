@@ -66,7 +66,7 @@ and ensure the runtime is still set to "Node.js 6.10".
 repo from the file picker. If you would like, you can zip the code yourself by
 running the following Bash command within this repository:
    ```
-   $ zip -r ../united.zip *
+   $ yarn && zip -r ../united.zip *
    ```
 7. Under "Lambda function handler and role", choose an appropriate role. If you
 don't have any AWS IAM roles, choose "Create new role from template(s)".
