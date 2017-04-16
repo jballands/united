@@ -17,12 +17,12 @@ freeing up one spot. No need to feel bad about it! You're just doing your job.
 
 ## Installation
 
-This is code for an [AWS Lambda](aws.amazon.com/lambda) function only. If you want
+This is code for an [AWS Lambda](https://aws.amazon.com/lambda) function only. If you want
 to integrate this into your Slack team, follow the following steps:
 
 ### Prerequisites
 
-* An account with [Amazon Web Services](aws.amazon.com) (AWS).
+* An account with [Amazon Web Services](https://aws.amazon.com) (AWS).
 * Access to a (willing) Slack team where you can create internal integrations.
 
 Ensure you are logged into AWS and Slack before continuing.
