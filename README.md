@@ -41,6 +41,9 @@ something sensible (like "United") and choose a team, then choose "Create App".
     * Modify your public channels. (channels:write)
     * Access information about user's private channels. (groups:read)
     * Modify your private channels. (groups:write)
+    * Access information about user’s direct messages. (im:read)
+    * Modify user’s direct messages. (im:write)
+    * Send messages as United. (chat:write:bot)
 
 ### Create a New Lambda
 
@@ -160,7 +163,9 @@ you will need to access AWS IAM to make one:
    assigned to your Lambda function, then choose "Next Step".
    * Review your new key policy, then choose "Finish".
 10. Once you have chosen a KWS key, choose "Encrypt".
-11. Choose "Save".
+11. If you would like, you can set a second environment variable, `CATCHPHRASE`, the phrase that the
+bot will say when it kicks someone out. The default line is "U stay in the seato, u get a beato."
+12. Choose "Save".
 
 ### Test
 

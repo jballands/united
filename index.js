@@ -19,7 +19,7 @@ const qs = require('querystring');
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 let decrypted;
 
-const catchphrase = 'U stay in the seato, u get a beato';
+const catchphrase = process.env.CATCHPHRASE || 'U stay in the seato, u get a beato';
 
 // -----------------------------------------------------------------------------
 //  LAMBDA
@@ -33,13 +33,15 @@ exports.handler = (event, context, callback) => {
     getAccessToken()
         .then(token => getChannelMembers(decrypted, channelId))
         .then(members => chooseRandomMember(members))
+        .then(memberId => kickMember(decrypted, channelId, memberId))
+        .then(memberId => getMemberIMCHannel(decrypted, memberId))
+        .then(channelId => messageMember(decrypted, channelId))
         .then(
             () => callback(null, {
                 response_type: 'in_channel',
                 text: catchphrase
             })
         )
-        .then(memberId => kickMember(decrypted, channelId, memberId))
         .catch(err => {
             console.error(err);
             return callback(null, err);
@@ -142,6 +144,58 @@ function kickMember(accessToken, channelId, userId) {
                         return reject('Looks like you got chosen... Too bad Slack won\'t let me kick you out. Try again?');
                     }
                     return reject('I couldn\'nt kick anyone out for some reason...');
+                }
+                return resolve(userId);
+            })
+            .catch(err => reject(err));
+        });
+}
+
+//
+//  Returns a promise that attempts to resolve to the victim's DM channel id.
+//
+function getMemberIMCHannel(accessToken, userId) {
+    return new Promise((resolve, reject) => {
+        const args = {
+            token: accessToken,
+            user: userId
+        };
+
+        axios.post(`https://slack.com/api/im.open?${qs.stringify(args)}`)
+            .then(res => {
+                const data = res.data;
+                if (data.ok !== true) {
+                    console.error(`Response was not ok!! ${JSON.stringify(data)}`);
+                    return reject('I couldn\'t fetch information about the kicked user...');
+                }
+                if (!data.channel || !data.channel.id) {
+                    console.error(`Unexpected data was returned!! ${JSON.stringify(data)}`);
+                    return reject('I couldn\'t fetch information about the kicked user...');
+                }
+
+                return resolve(data.channel.id);
+            })
+            .catch(err => reject(err));
+        });
+}
+
+//
+//  Returns a promise that attempts to resolve after DM'ing the victim.
+//
+function messageMember(accessToken, channelId) {
+    return new Promise((resolve, reject) => {
+        const args = {
+            token: accessToken,
+            channel: channelId,
+            text: catchphrase
+        };
+
+        axios.post(`https://slack.com/api/chat.postMessage?${qs.stringify(args)}`)
+            .then(res => {
+                const data = res.data;
+                if (data.ok !== true) {
+                    console.error(`Response was not ok!! ${JSON.stringify(data)}`);
+                    return reject('I couldn\'t message the user who got kicked...');
                 }
                 return resolve();
             })
