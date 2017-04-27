@@ -1,7 +1,9 @@
 {
-    "name": "united",
-    "version": "1.1.0",
+    "name": "@jballands/united",
+    "version": "2.0.0",
     "description": "Make room for higher paying customers and crew in Slack",
+    "author": "Jon Ballands <jballands@gmail.com>",
+    "license": "MIT",
     "dependencies": {
         "aws-sdk": "^2.41.0",
         "axios": "^0.16.1",

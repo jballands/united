@@ -4,8 +4,7 @@
 //  jballands/united
 //  index.js
 //
-//  An AWS Lambda function that makes room in an overbooked Slack channel for
-//  higher paying customers and crew, whether you like it or not.
+//  An AWS Lambda function that
 //
 //  © 2017 Jonathan Ballands
 //
@@ -13,13 +12,11 @@
 const aws = require('aws-sdk');
 const axios = require('axios');
 const process = require('process');
-const _random = require('lodash.random');
 const qs = require('querystring');
 
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+const ALERT_ENDPOINT = process.env.ALERT_ENDPOINT;
 let decrypted;
-
-const catchphrase = process.env.CATCHPHRASE || 'U stay in the seato, u get a beato';
 
 // -----------------------------------------------------------------------------
 //  LAMBDA
@@ -27,24 +24,22 @@ const catchphrase = process.env.CATCHPHRASE || 'U stay in the seato, u get a bea
 
 exports.handler = (event, context, callback) => {
     const params = qs.parse(event.postBody)
-    const channelId = params['channel_id'];
+    const channel = params['channel_id'];
 
-    // U stay in the seato, u get a beato
     getAccessToken()
-        .then(token => getChannelMembers(decrypted, channelId))
+        .then(() => getChannelMembers(decrypted, channel))
         .then(members => chooseRandomMember(members))
-        .then(memberId => kickMember(decrypted, channelId, memberId))
-        .then(memberId => getMemberIMCHannel(decrypted, memberId))
-        .then(channelId => messageMember(decrypted, channelId))
-        .then(
-            () => callback(null, {
-                response_type: 'in_channel',
-                text: catchphrase
-            })
-        )
+        .then(member => kickMember(decrypted, channel, member))
+        .then(member => callback(null, {
+            response_type: 'in_channel',
+            text: `<@${member}>, ${catchphrase}`
+        }))
         .catch(err => {
             console.error(err);
-            return callback(null, err);
+            return callback(null, {
+                response_type: 'ephemeral',
+                text: err
+            });
         });
 };
 
@@ -52,9 +47,6 @@ exports.handler = (event, context, callback) => {
 //  HELPERS
 // -----------------------------------------------------------------------------
 
-//
-//  Returns a promise that attempts to resolve the access token from AWS.
-//
 function getAccessToken() {
     return new Promise((resolve, reject) => {
         if (decrypted) {
@@ -72,133 +64,4 @@ function getAccessToken() {
             });
         }
     });
-}
-
-//
-//  Returns a promise that attempts to resolve members of a channel.
-//
-function getChannelMembers(accessToken, channelId) {
-    return new Promise((resolve, reject) => {
-        const args = {
-            token: accessToken,
-            channel: channelId
-        };
-
-        const visibility = channelId.startsWith('G') ?
-            { endpoint: 'groups.info', raw: 'group' } :
-            { endpoint: 'channels.info', raw: 'channel' };
-
-        axios.post(`https://slack.com/api/${visibility.endpoint}?${qs.stringify(args)}`)
-            .then(res => {
-                const data = res.data;
-                if (data.ok !== true) {
-                    console.error(`Response was not ok!! ${JSON.stringify(data)}`);
-                    return reject('Arg. I couldn\'nt get the flight roster from Slack. Next time...');
-                }
-
-                return resolve(data[visibility.raw].members);
-            })
-            .catch(err => reject(err));
-    });
-}
-
-//
-//  Returns a promise that attempts to resolve to the victim user.
-//
-function chooseRandomMember(members) {
-    return new Promise((resolve, reject) => {
-        if (!members.length || members.length <= 0) {
-            return reject('I can\'t kick out people that don\'t exist.');
-        }
-        if (members.length === 1) {
-            return reject('I can\'t kick you out if you\'re the only member of a channel (LOL).');
-        }
-        return resolve(members[_random(members.length - 1)]);
-    });
-}
-
-//
-//  Returns a promise that attempts to resolve after kicking the victim from the
-//  Slack channel.
-//
-function kickMember(accessToken, channelId, userId) {
-    return new Promise((resolve, reject) => {
-        const args = {
-            token: accessToken,
-            channel: channelId,
-            user: userId
-        };
-
-        const visibility = channelId.startsWith('G') ?
-            { endpoint: 'groups.kick', raw: 'group' } :
-            { endpoint: 'channels.kick', raw: 'channel' };
-
-        axios.post(`https://slack.com/api/${visibility.endpoint}?${qs.stringify(args)}`)
-            .then(res => {
-                const data = res.data;
-                if (data.ok !== true) {
-                    console.error(`Response was not ok!! ${JSON.stringify(data)}`);
-
-                    // If it chose the invoker, reject it with a funny message
-                    if (data.error === 'cant_kick_self') {
-                        return reject('Looks like you got chosen... Too bad Slack won\'t let me kick you out. Try again?');
-                    }
-                    return reject('I couldn\'nt kick anyone out for some reason...');
-                }
-                return resolve(userId);
-            })
-            .catch(err => reject(err));
-        });
-}
-
-//
-//  Returns a promise that attempts to resolve to the victim's DM channel id.
-//
-function getMemberIMCHannel(accessToken, userId) {
-    return new Promise((resolve, reject) => {
-        const args = {
-            token: accessToken,
-            user: userId
-        };
-
-        axios.post(`https://slack.com/api/im.open?${qs.stringify(args)}`)
-            .then(res => {
-                const data = res.data;
-                if (data.ok !== true) {
-                    console.error(`Response was not ok!! ${JSON.stringify(data)}`);
-                    return reject('I couldn\'t fetch information about the kicked user...');
-                }
-                if (!data.channel || !data.channel.id) {
-                    console.error(`Unexpected data was returned!! ${JSON.stringify(data)}`);
-                    return reject('I couldn\'t fetch information about the kicked user...');
-                }
-
-                return resolve(data.channel.id);
-            })
-            .catch(err => reject(err));
-        });
-}
-
-//
-//  Returns a promise that attempts to resolve after DM'ing the victim.
-//
-function messageMember(accessToken, channelId) {
-    return new Promise((resolve, reject) => {
-        const args = {
-            token: accessToken,
-            channel: channelId,
-            text: catchphrase
-        };
-
-        axios.post(`https://slack.com/api/chat.postMessage?${qs.stringify(args)}`)
-            .then(res => {
-                const data = res.data;
-                if (data.ok !== true) {
-                    console.error(`Response was not ok!! ${JSON.stringify(data)}`);
-                    return reject('I couldn\'t message the user who got kicked...');
-                }
-                return resolve();
-            })
-            .catch(err => reject(err));
-        });
 }
