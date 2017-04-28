@@ -19,7 +19,7 @@ freeing up one spot. No need to feel bad about it! You're just doing your job.
 
 ## Installation
 
-This repo is code for two [AWS Lambda](https://aws.amazon.com/lambda/) functions.Â
+This repo is code for two [AWS Lambda](https://aws.amazon.com/lambda/) functions.
 If you want to integrate this into your Slack team, follow the following steps:
 
 ### Prerequisites
