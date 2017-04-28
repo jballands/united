@@ -20,7 +20,7 @@ const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 let decrypted;
 
 const MIN_TIMEOUT = 3000;
-const MAX_TIMEOUT = 6500;
+const MAX_TIMEOUT = 12000;
 
 // -----------------------------------------------------------------------------
 //  LAMBDA

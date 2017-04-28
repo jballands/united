@@ -17,7 +17,7 @@ const _random = require('lodash.random');
 const qs = require('querystring');
 
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
-const KICK_ENDPOINT = process.env.KICK_ENDPOINT;
+const KICK_LAMBDA_NAME = process.env.KICK_LAMBDA_NAME;
 let decrypted;
 
 const catchphrase = 'u stay in the seato, u get a beato';
@@ -33,7 +33,7 @@ exports.handler = (event, context, callback) => {
     getAccessToken()
         .then(() => getChannelMembers(decrypted, channel))
         .then(members => chooseRandomMember(members))
-        .then(member => kickMember(decrypted, channel, member))
+        .then(member => kickMember(channel, member))
         .then(member => callback(null, {
             response_type: 'in_channel',
             text: `<@${member}>, ${catchphrase}`
@@ -109,12 +109,14 @@ function chooseRandomMember(members) {
 
 function kickMember(channel, user) {
     return new Promise((resolve, reject) => {
-        const args = {
-            channel: channel,
-            user: user
+        const kickLambda = new aws.Lambda();
+        const params = {
+            FunctionName: KICK_LAMBDA_NAME,
+            Payload: JSON.stringify({ channel: channel, user: user }),
+            InvocationType: 'Event'
         };
 
-        axios.post(KICK_ENDPOINT, args);
+        kickLambda.invoke(params).send();
         resolve(user);
     });
 }
