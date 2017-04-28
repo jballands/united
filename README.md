@@ -66,7 +66,7 @@ under "Compute", choose "Lambda".
 2. Choose "Create a Lambda Function". You will do the next steps twice, once for
 each Lambda function:
 
-    1. In the side var, choose "Configure function". Name your function something
+    1. In the side bar, choose "Configure function". Name your function something
     sensible (like `united-alert` or `united-kick`, as long as you can distinguish
     between the alert Lambda and the kicking Lambda). Ensure the runtime is set to
     "Node.js 6.10".
