@@ -48,13 +48,11 @@ New App". Name it something sensible (like "United"), choose a team, then choose
 "Create App".
 
 2. In the side bar, choose "OAuth & Permissions". Under "Permission Scopes", select
-the following permissions:
+the following permissions, then choose "Save Changes":
     * Access information about user's public channels. `(channels:read)`
     * Modify your public channels. `(channels:write)`
     * Access information about user's private channels. `(groups:read)`
     * Modify your private channels. `(groups:write)`
-
-  Finally, choose "Save Changes".
 
 ### Create Two New Lambdas
 
@@ -68,35 +66,36 @@ under "Compute", choose "Lambda".
 2. Choose "Create a Lambda Function". You will do the next steps twice, once for
 each Lambda function:
 
-    a. In the side var, choose "Configure function". Name your function something
+    1. In the side var, choose "Configure function". Name your function something
     sensible (like `united-alert` or `united-kick`, as long as you can distinguish
     between the alert Lambda and the kicking Lambda). Ensure the runtime is set to
     "Node.js 6.10".
 
-    b. Under "Lambda function code", in the "Code entry type" dropdown, choose
+    2. Under "Lambda function code", in the "Code entry type" dropdown, choose
     "Upload a .ZIP file". Choose "Upload", and select the .zip file found in this
     repo from the file picker. If you would like, you can zip the code yourself by
     running the following Bash command within this repository:
 
-    ```
-    $ yarn && zip -r ./united.zip *
-    ```
+        ```
+        $ yarn && zip -r ./united.zip *
+        ```
 
-    c. Under "Lambda function handler and role", choose an appropriate role that
-    has at least the following policies:
+    3. Under "Lambda function handler and role", choose an appropriate role that
+    has at least the following policies (if you don't have any AWS IAM roles,
+    you'll need to create one in AWS IAM that has these policies attached):
 
-    * CloudWatchLogsFullAccess
-    * AWSLambdaRole
-    * AmazonAPIGatewayInvokeFullAccess
+        * CloudWatchLogsFullAccess
+        * AWSLambdaRole
+        * AmazonAPIGatewayInvokeFullAccess
 
-  If you don't have any AWS IAM roles, you'll need to create one in AWS IAM that
+    4. If you don't have any AWS IAM roles, you'll need to create one in AWS IAM that
     has these policies attached.
 
-    d. Uncollapse "Advanced settings". Under "Timeout", if this Lambda will be
+    5. Uncollapse "Advanced settings". Under "Timeout", if this Lambda will be
     equivalent to `united-alert`, choose "5 secs", and if this Lambda will be
     equivalent to `united-kick`, choose "15 secs".
 
-    e. Choose "Next". Review your settings, then choose "Create function".
+    6. Choose "Next". Review your settings, then choose "Create function".
 
 ### Give Access To AWS Lambda Via AWS API Gateway
 
@@ -112,7 +111,6 @@ your future Lambda microservices, then choose "Create API".
 
 3. Choose the root of the API. Create resources under the root until you have a
 structure resembling `/slack/united`:
-
     * Choose "Actions", then "Create Resource".
     * Name your resource "Slack", then choose "Create Resource".
     * Select the `/slack` resource, and create another resource called `/united`.
@@ -130,21 +128,20 @@ Lambda function, then choose "Save". Your resource tree should look like this:
 6. When Slack sends a POST request, it's going to do so using
 `application/x-www-form-urlencoded`, which is something API Gateway can't handle
 out of the box. Let's fix this:
-
-    * From the flowchart, choose "Integration Request".
-    * Decollapse "Body Mapping Templates", under "Request body passthrough",
+    1. From the flowchart, choose "Integration Request".
+    2. Decollapse "Body Mapping Templates", under "Request body passthrough",
     choose "When no template matches the request Content-Type header".
-    * Under "Content-Type", choose "Add mapping template". Paste the following
-    code into the text field:
+    3. Under "Content-Type", choose "Add mapping template". Paste the following
+    code into the text field (this will allow you to access the url encoded arguments
+    via `postBody` in your Lambda function, where you can use snazzy Node libraries
+    to parse it):
+        ```
+        {
+            "postBody" : $input.json("$")
+        }
+        ```
 
-    ```
-    {
-        "postBody" : $input.json("$")
-    }
-    ```
-    This will allow you to access the url encoded arguments via `postBody` in your
-    Lambda function, where you can use snazzy Node libraries to parse it.
-    * Choose "Save".
+    4. Choose "Save".
 
 7. Choose the `/` resource, then choose "Actions", then choose "Deploy API".
 
@@ -186,18 +183,18 @@ perform the OAuth within Slack. Authorize the app.
 6. In [AWS](https://console.aws.amazon.com/console/home?region=us-east-1), go
 to AWS Lambda and for both Lambda functions:
 
-    a. Under the "Code" tab, under "Environment variables", create a new variable
+    1. Under the "Code" tab, under "Environment variables", create a new variable
     whose key is `ACCESS_TOKEN` and whose value is your access token.
 
-    b. Tick the "Enable encryption helpers" box. Under "Encryption key", choose an
+    2. Tick the "Enable encryption helpers" box. Under "Encryption key", choose an
     appropriate KWS key, then choose "Encrypt". If you don't have a key, you will
     need to access AWS IAM to make one.
 
-    c. If this is the `united-alert` Lambda function, create a second variable
+    3. If this is the `united-alert` Lambda function, create a second variable
     whose key is `KICK_LAMBDA_NAME` and whose value is the ARN of your `united-kick`
     Lambda function.
 
-    d. Choose "Save".
+    4. Choose "Save".
 
 ### Test
 
